@@ -1,0 +1,7 @@
+{
+  "invoice_number": "INV-7890",
+  "date": "2025-05-30",
+  "customer_id": "CUST123",
+  "amount_due": 1500.00,
+  "due_date": "2025-06-29"
+}

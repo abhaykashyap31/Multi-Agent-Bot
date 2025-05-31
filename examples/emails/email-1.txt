@@ -1,0 +1,11 @@
+From: john.smith@company.com
+To: sales@vendor.com
+Subject: Request for Quotation for Office Supplies
+
+Dear Sales Team,
+
+We are interested in purchasing office supplies including pens, notebooks, and printer paper. Kindly send us your best quotation for bulk orders.
+
+Thank you,
+John Smith
+Procurement Manager

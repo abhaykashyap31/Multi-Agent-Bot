@@ -1,0 +1,9 @@
+{
+  "request_type": "RFQ",
+  "items": [
+    {"item": "Laptop", "quantity": 10},
+    {"item": "Monitor", "quantity": 15}
+  ],
+  "requested_by": "procurement_team",
+  "priority": "normal"
+}

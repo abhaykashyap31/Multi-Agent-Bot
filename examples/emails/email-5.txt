@@ -1,0 +1,10 @@
+From: compliance@company.com
+To: allstaff@company.com
+Subject: New Compliance Regulations Effective June 1st
+
+Dear Team,
+
+Please be informed that new data protection regulations will be effective starting June 1st. Ensure all your processes comply with the updated standards.
+
+Regards,
+Compliance Department

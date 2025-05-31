@@ -1,0 +1,10 @@
+From: accounting@company.com
+To: client@business.com
+Subject: Invoice #5678 for Your Recent Purchase
+
+Dear Customer,
+
+Please find attached the invoice for your recent order #5678 totaling $450. Payment is due within 30 days.
+
+Best regards,
+Accounting Department

@@ -1,0 +1,9 @@
+From: security@company.com
+To: user@example.com
+Subject: Unauthorized Access Detected
+
+Dear User,
+
+We have detected suspicious activity on your account from an unrecognized device. If this was not you, please reset your password immediately to secure your account.
+
+Security Team
