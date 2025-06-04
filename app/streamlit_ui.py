@@ -87,7 +87,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # API Configuration
-API_BASE = st.sidebar.text_input("🔗 API Base URL", value="http://127.0.0.1:8000")
+API_BASE = st.sidebar.text_input("🔗 API Base URL", value="https://multi-agent-bot-1.onrender.com")
 
 # Connection status check
 def check_api_connection(retries=3, delay=2):
