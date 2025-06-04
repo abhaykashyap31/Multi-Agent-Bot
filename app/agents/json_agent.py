@@ -1,38 +1,34 @@
 import datetime
-import requests
-from jsonschema import validate, ValidationError
+import threading
 
-ALERT_ENDPOINT = "http://localhost:8000/log"
+REQUIRED_FIELDS = ["event_id", "timestamp", "user_id"]
 
-EXPECTED_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "event_id": {"type": "string"},
-        "timestamp": {"type": "string"},
-        "user_id": {"type": "string"},
-        "amount": {"type": "number"}
-    },
-    "required": ["event_id", "timestamp", "user_id"]
-}
+def send_alert_async(endpoint, payload):
+    import requests
+    def _send():
+        try:
+            requests.post(endpoint, json=payload, timeout=3)
+        except Exception:
+            pass
+    threading.Thread(target=_send, daemon=True).start()
 
 def process_json(json_payload: dict) -> dict:
     status = "valid"
     alert = False
-
-    try:
-        validate(instance=json_payload, schema=EXPECTED_SCHEMA)
-    except ValidationError as ve:
+    trace = []
+    missing_fields = [f for f in REQUIRED_FIELDS if f not in json_payload]
+    if missing_fields:
         status = "invalid"
         alert = True
-        try:
-            requests.post(ALERT_ENDPOINT, json={"error": str(ve), "data": json_payload}, timeout=3)
-        except requests.RequestException:
-            pass
-
+        trace.append(f"Missing required fields: {missing_fields}")
+        send_alert_async("http://localhost:8000/log", {"error": f"Missing fields: {missing_fields}", "data": json_payload})
+    else:
+        trace.append("All required fields present.")
     return {
         "agent": "json_agent",
         "timestamp": datetime.datetime.utcnow().isoformat(),
         "schema_status": status,
         "anomaly_flagged": alert,
-        "payload": json_payload
+        "payload": json_payload,
+        "decision_trace": trace
     }

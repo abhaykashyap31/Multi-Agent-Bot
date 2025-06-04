@@ -26,20 +26,24 @@ def init_memory():
 
 def store_entry(source: str, classification: dict, agent_data: dict, actions: dict):
     """Insert a new memory log entry."""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO memory (timestamp, source, classification, agent_data, actions)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (
-        agent_data.get("timestamp", ""),
-        source,
-        json.dumps(classification, ensure_ascii=False),
-        json.dumps(agent_data, ensure_ascii=False),
-        json.dumps(actions, ensure_ascii=False)
-    ))
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_FILE, timeout=10)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO memory (timestamp, source, classification, agent_data, actions)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (
+            agent_data.get("timestamp", ""),
+            source,
+            json.dumps(classification, ensure_ascii=False),
+            json.dumps(agent_data, ensure_ascii=False),
+            json.dumps(actions, ensure_ascii=False)
+        ))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print("Error in store_entry:", e)
+        raise
 
 def get_all_entries() -> list:
     """Return all stored memory log entries."""
