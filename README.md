@@ -14,9 +14,9 @@ This project is a modular, multi-agent system for processing and analyzing docum
 - **Automated Actions**: Escalation, risk alerts, and logging based on intelligent classification.
 - **Memory & Audit**: All processed entries are stored and viewable for audit and monitoring.
 ---
-## Demo Video : 
-```https://drive.google.com/file/d/1uVp8eMJRfx3NxsNko0GA7n7NMDJ2l1Yd/view?usp=drive_link
-```
+## 📽️ Demo Video  
+[Watch the Demo](https://drive.google.com/file/d/1uVp8eMJRfx3NxsNko0GA7n7NMDJ2l1Yd/view?usp=drive_link)
+
 ---
 
 ## 🗂️ Project Structure
