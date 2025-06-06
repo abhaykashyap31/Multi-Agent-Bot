@@ -4,6 +4,7 @@ import datetime
 import requests
 import google.generativeai as genai
 from dotenv import load_dotenv
+from utils.internal_actions import escalate_crm
 
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -55,9 +56,9 @@ def process_email(email_text: str) -> dict:
     action_taken = "logged"
     if tone in ["angry", "escalated", "threatening"] and urgency == "high":
         try:
-            requests.post(CRM_ENDPOINT, json={"sender": sender, "issue": issue}, timeout=3)
+            escalate_crm({"sender": sender, "issue": issue})
             action_taken = "escalated"
-        except requests.RequestException:
+        except Exception:
             action_taken = "error"
 
     return {

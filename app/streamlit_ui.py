@@ -87,10 +87,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # API Configuration
-API_BASE = st.sidebar.text_input("🔗 API Base URL", value="https://multi-agent-bot-1.onrender.com")
+API_BASE = st.sidebar.text_input("🔗 API Base URL", value="http://127.0.0.1:8000")
 
 # Connection status check
-def check_api_connection(retries=3, delay=2):
+def check_api_connection(retries=1, delay=60):
     for _ in range(retries):
         try:
             response = requests.get(f"{API_BASE}/memory", timeout=10)
@@ -497,90 +497,93 @@ with col2:
         time.sleep(3)
         st.rerun()
     
-    # Fetch and display memory
-    if refresh_memory or auto_refresh:
+    # Throttle memory fetch to once per minute
+    now = time.time()
+    last_fetch = st.session_state.get('last_memory_fetch', 0)
+    memory_data = st.session_state.get('cached_memory_data', None)
+    fetch_needed = False
+    
+    if refresh_memory:
+        fetch_needed = True  # Manual refresh always fetches
+    elif auto_refresh:
+        if now - last_fetch > 60:
+            fetch_needed = True  # Auto-refresh, but only if 60s passed
+    
+    if fetch_needed:
         try:
             memory_response = requests.get(f"{API_BASE}/memory", timeout=30)
             if memory_response.status_code == 200:
                 memory_data = memory_response.json()
-                
-                if memory_data:
-                    st.success(f"📊 {len(memory_data)} entries in memory")
-                    
-                    # Process memory data
-                    if isinstance(memory_data, list) and len(memory_data) > 0:
-                        # Create summary statistics
-                        sources = []
-                        timestamps = []
-                        
-                        for entry in memory_data:
-                            if isinstance(entry, dict):
-                                sources.append(entry.get('source', 'unknown'))
-                                # Try to extract timestamp if available
-                                if 'timestamp' in entry:
-                                    timestamps.append(entry['timestamp'])
-                        
-                        if sources:
-                            source_counts = pd.Series(sources).value_counts()
-                            
-                            st.markdown("**📈 Processing Summary:**")
-                            for source, count in source_counts.items():
-                                st.markdown(f"- **{source}**: {count} entries")
-                        
-                        # Show recent entries
-                        st.markdown("**🕒 Recent Entries:**")
-                        recent_entries = memory_data[-5:] if len(memory_data) > 5 else memory_data
-                        
-                        for i, entry in enumerate(reversed(recent_entries)):
-                            entry_num = len(memory_data) - i
-                            
-                            if isinstance(entry, dict):
-                                source = entry.get('source', 'unknown')
-                                # Create a summary for the expander
-                                summary = f"Entry {entry_num}: {source}"
-                                
-                                # Add risk indicators if available
-                                if 'classification_result' in entry:
-                                    class_result = entry['classification_result']
-                                    if class_result.get('anomaly_flagged'):
-                                        summary += " 🚨"
-                                    if class_result.get('risk_triggered'):
-                                        summary += " ⚠️"
-                                
-                                with st.expander(summary):
-                                    # Show key information first
-                                    if 'classification_result' in entry:
-                                        class_result = entry['classification_result']
-                                        
-                                        # Fixed: Use simple markdown instead of nested columns
-                                        st.markdown("**Status Overview:**")
-                                        anomaly_status = "🚨 **Anomaly Detected**" if class_result.get('anomaly_flagged') else "✅ **No Anomaly**"
-                                        risk_status = "⚠️ **Risk Triggered**" if class_result.get('risk_triggered') else "✅ **No Risk**"
-                                        st.markdown(f"{anomaly_status} | {risk_status}")
-                                    
-                                    # Show actions if any
-                                    if 'actions' in entry and entry['actions']:
-                                        st.markdown(f"**Actions:** {', '.join(entry['actions'])}")
-                                    
-                                    # Show full entry
-                                    st.json(entry)
-                            else:
-                                with st.expander(f"Entry {entry_num}: {type(entry).__name__}"):
-                                    if isinstance(entry, (dict, list)):
-                                        st.json(entry)
-                                    else:
-                                        st.text(str(entry))
-                    else:
-                        st.info("📭 No entries found or unexpected data format")
-                else:
-                    st.info("📭 No entries in system memory yet")
+                st.session_state['cached_memory_data'] = memory_data
+                st.session_state['last_memory_fetch'] = now
             else:
                 st.error(f"❌ Failed to fetch memory data (Status: {memory_response.status_code})")
-                
+                memory_data = None
         except requests.RequestException as e:
             st.error(f"❌ Connection error: {e}")
+            memory_data = None
         except Exception as e:
             st.error(f"❌ Error processing memory data: {e}")
+            memory_data = None
+    # If not fetching, use cached data
+    
+    if memory_data:
+        st.success(f"📊 {len(memory_data)} entries in memory")
+        # Process memory data
+        if isinstance(memory_data, list) and len(memory_data) > 0:
+            # Create summary statistics
+            sources = []
+            timestamps = []
+            for entry in memory_data:
+                if isinstance(entry, dict):
+                    sources.append(entry.get('source', 'unknown'))
+                    # Try to extract timestamp if available
+                    if 'timestamp' in entry:
+                        timestamps.append(entry['timestamp'])
+            if sources:
+                source_counts = pd.Series(sources).value_counts()
+                st.markdown("**📈 Processing Summary:**")
+                for source, count in source_counts.items():
+                    st.markdown(f"- **{source}**: {count} entries")
+            # Show recent entries
+            st.markdown("**🕒 Recent Entries:**")
+            recent_entries = memory_data[-5:] if len(memory_data) > 5 else memory_data
+            for i, entry in enumerate(reversed(recent_entries)):
+                entry_num = len(memory_data) - i
+                if isinstance(entry, dict):
+                    source = entry.get('source', 'unknown')
+                    # Create a summary for the expander
+                    summary = f"Entry {entry_num}: {source}"
+                    # Add risk indicators if available
+                    if 'classification_result' in entry:
+                        class_result = entry['classification_result']
+                        if class_result.get('anomaly_flagged'):
+                            summary += " 🚨"
+                        if class_result.get('risk_triggered'):
+                            summary += " ⚠️"
+                    with st.expander(summary):
+                        # Show key information first
+                        if 'classification_result' in entry:
+                            class_result = entry['classification_result']
+                            st.markdown("**Status Overview:**")
+                            anomaly_status = "🚨 **Anomaly Detected**" if class_result.get('anomaly_flagged') else "✅ **No Anomaly**"
+                            risk_status = "⚠️ **Risk Triggered**" if class_result.get('risk_triggered') else "✅ **No Risk**"
+                            st.markdown(f"{anomaly_status} | {risk_status}")
+                        # Show actions if any
+                        if 'actions' in entry and entry['actions']:
+                            st.markdown(f"**Actions:** {', '.join(entry['actions'])}")
+                        # Show full entry
+                        st.json(entry)
+                else:
+                    with st.expander(f"Entry {entry_num}: {type(entry).__name__}"):
+                        if isinstance(entry, (dict, list)):
+                            st.json(entry)
+                        else:
+                            st.text(str(entry))
+        else:
+            st.info("📭 No entries found or unexpected data format")
+    else:
+        st.info("📭 No entries in system memory yet")
 
 # Footer with system information
 st.markdown("---")

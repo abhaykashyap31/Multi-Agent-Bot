@@ -3,6 +3,7 @@ import datetime
 import re
 import requests
 from io import BytesIO
+from utils.internal_actions import risk_alert
 
 RISK_ALERT_ENDPOINT = "http://localhost:8000/risk_alert"
 COMPLIANCE_TERMS = ["GDPR", "FDA", "HIPAA"]
@@ -36,12 +37,12 @@ def process_pdf(file_bytes: bytes) -> dict:
         trace.append(f"Compliance terms found: {compliance_flags}. Risk triggered.")
     if triggered:
         try:
-            requests.post(RISK_ALERT_ENDPOINT, json={
+            risk_alert({
                 "total": total,
                 "compliance_flags": compliance_flags
-            }, timeout=3)
+            })
             trace.append("Risk alert sent to endpoint.")
-        except requests.RequestException:
+        except Exception:
             trace.append("Failed to send risk alert to endpoint.")
 
     return {

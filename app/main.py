@@ -12,6 +12,7 @@ from agents.json_agent import process_json
 from agents.pdf_agent import process_pdf
 from router.action_router import route_action
 from memory.memory_store import store_entry, get_all_entries
+from utils.internal_actions import escalate_crm, risk_alert, log_alert
 
 app = FastAPI()
 
@@ -185,5 +186,5 @@ def log_alert(payload: dict):
 
 if __name__ == "__main__":
     import uvicorn
-    Port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=Port, reload=True)
+    #Port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

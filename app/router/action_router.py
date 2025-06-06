@@ -2,6 +2,7 @@
 
 import requests
 import datetime
+from utils.internal_actions import escalate_crm, risk_alert, log_alert
 
 ACTION_ENDPOINTS = {
     "escalate": "http://localhost:8000/crm/escalate",
@@ -19,9 +20,12 @@ def route_action(agent_data: dict, classification: dict) -> dict:
         # Email: escalation based on tone
         if fmt == "email":
             if agent_data.get("tone") in ["angry", "threatening", "escalated"]:
-                requests.post(ACTION_ENDPOINTS["escalate"], json=agent_data)
-                triggered_actions.append("escalate")
-                trace.append("Escalation triggered for email (angry/threatening/escalated tone).")
+                try:
+                    escalate_crm(agent_data)
+                    triggered_actions.append("escalate")
+                    trace.append("Escalation triggered for email (angry/threatening/escalated tone).")
+                except Exception as e:
+                    trace.append(f"Error escalating CRM: {e}")
             else:
                 trace.append("No escalation needed for email.")
 
@@ -35,23 +39,25 @@ def route_action(agent_data: dict, classification: dict) -> dict:
                             "details": agent_data.get("decision_trace", []),
                             "payload": agent_data["payload"]
                         }
-                        requests.post(ACTION_ENDPOINTS["log"], json=log_data, timeout=3)
+                        log_alert(log_data)
                     else:
-                        requests.post(ACTION_ENDPOINTS["log"], json=agent_data, timeout=3)
+                        log_alert(agent_data)
                     triggered_actions.append("log_alert")
                     trace.append("Log alert triggered for JSON anomaly.")
                 except Exception as e:
-                    trace.append(f"Error posting to log endpoint: {e}")
+                    trace.append(f"Error logging alert: {e}")
             else:
                 trace.append("No anomaly detected in JSON.")
-
 
         # PDF: flag high-value invoice or compliance
         elif fmt == "pdf":
             if agent_data.get("risk_triggered"):
-                requests.post(ACTION_ENDPOINTS["risk_alert"], json=agent_data)
-                triggered_actions.append("risk_alert")
-                trace.append("Risk alert triggered for PDF (invoice > 10,000 or compliance term found).")
+                try:
+                    risk_alert(agent_data)
+                    triggered_actions.append("risk_alert")
+                    trace.append("Risk alert triggered for PDF (invoice > 10,000 or compliance term found).")
+                except Exception as e:
+                    trace.append(f"Error sending risk alert: {e}")
             else:
                 trace.append("No risk triggered for PDF.")
 
